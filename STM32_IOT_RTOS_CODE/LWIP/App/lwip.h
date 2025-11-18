@@ -17,6 +17,7 @@
   *************************************************************************
 
   */
+  #include "main.h"
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __mx_lwip_H
@@ -34,7 +35,6 @@
 #include "lwip/netif.h"
 #include "lwip/timeouts.h"
 #include "ethernetif.h"
-#include "main.h"
 
 /* Includes for RTOS ---------------------------------------------------------*/
 #if WITH_RTOS
