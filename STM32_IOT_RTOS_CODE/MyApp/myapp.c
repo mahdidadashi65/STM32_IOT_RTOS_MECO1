@@ -13,6 +13,9 @@
 
 #include "httpserver-socket.h"
 
+#include "i2c.h"
+#include "sht2x_for_stm32_hal.h"
+
 
 
 #ifdef __GNUC__
@@ -48,6 +51,10 @@ void StartMyAppTask(void const * argument)
   /* USER CODE BEGIN StartDefaultTask */
     http_server_socket_init();
 
+  	/* Initializes SHT2x temperature/humidity sensor and sets the resolution. */
+	SHT2x_Init(&hi2c3);
+	SHT2x_SetResolution(RES_14_12);
+  
   /* Infinite loop */
   for(;;)
   {
@@ -56,7 +63,24 @@ void StartMyAppTask(void const * argument)
     HAL_GPIO_TogglePin(LED_FAULT_GPIO_Port,LED_FAULT_Pin);
     HAL_GPIO_TogglePin(LED_BUS1_GPIO_Port,LED_BUS1_Pin);
     HAL_GPIO_TogglePin(LED_BUS2_GPIO_Port,LED_BUS2_Pin);
-     printf("Status LED Toggle\r\n");
+    // printf("Status LED Toggle\r\n");
+    
+    		unsigned char buffer[100] = { 0 };
+		/* Gets current temperature & relative humidity. */
+		float cel = SHT2x_GetTemperature(1);
+		/* Converts temperature to degrees Fahrenheit and Kelvin */
+		float fah = SHT2x_CelsiusToFahrenheit(cel);
+		float kel = SHT2x_CelsiusToKelvin(cel);
+		float rh = SHT2x_GetRelativeHumidity(1);
+		/* May show warning below. Ignore and proceed. */
+		sprintf(buffer,
+				"%d.%dºC, %d.%dºF, %d.%d K, %d.%d%% RH\n",
+				SHT2x_GetInteger(cel), SHT2x_GetDecimal(cel, 1),
+				SHT2x_GetInteger(fah), SHT2x_GetDecimal(fah, 1),
+				SHT2x_GetInteger(kel), SHT2x_GetDecimal(kel, 1),
+				SHT2x_GetInteger(rh), SHT2x_GetDecimal(rh, 1));
+		HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 1000);
+        
     osDelay(500);
   }
   /* USER CODE END StartDefaultTask */
