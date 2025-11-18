@@ -11,6 +11,9 @@
 #include "task.h"
 #include "cmsis_os.h"
 
+#include "httpserver-socket.h"
+
+
 
 #ifdef __GNUC__
 /* With GCC, small printf (option LD Linker->Libraries->Small printf
@@ -28,20 +31,23 @@ int fputc(int ch, FILE *f)
   return ch;
 }
 
+//V2
+//osThreadId_t myappTaskHandle;
+//const osThreadAttr_t myappTask_attributes = {
+//  .name = "myappTask",
+//  .stack_size = 128 * 4,
+//  .priority = (osPriority_t) osPriorityNormal,
+//};
 
-osThreadId_t myappTaskHandle;
-const osThreadAttr_t myappTask_attributes = {
-  .name = "myappTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
+//V1
+osThreadId myappTaskHandle;
 
 
-
-
-void StartMyAppTask(void *argument)
+void StartMyAppTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+    http_server_socket_init();
+
   /* Infinite loop */
   for(;;)
   {
@@ -57,11 +63,24 @@ void StartMyAppTask(void *argument)
 }
 
 
+
+
+
+//void myappV2(void)
+//{
+//  HAL_UART_Transmit(&huart3,"Start MyApp\r\n",strlen("Start MyApp\r\n"), 100);
+//  printf("Start MyApp\r\n");
+//  
+//  myappTaskHandle = osThreadNew(StartMyAppTask, NULL, &myappTask_attributes);
+
+//}
+
 void myapp(void)
 {
   HAL_UART_Transmit(&huart3,"Start MyApp\r\n",strlen("Start MyApp\r\n"), 100);
   printf("Start MyApp\r\n");
   
-  myappTaskHandle = osThreadNew(StartMyAppTask, NULL, &myappTask_attributes);
-
+  osThreadDef(myappTask, StartMyAppTask, osPriorityNormal, 0, 2048);
+  myappTaskHandle = osThreadCreate(osThread(myappTask), NULL);
 }
+
