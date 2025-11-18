@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "can.h"
 #include "i2c.h"
 #include "lwip.h"
 #include "usart.h"
@@ -93,6 +94,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   MX_I2C3_Init();
+  MX_CAN1_Init();
+  MX_CAN2_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
