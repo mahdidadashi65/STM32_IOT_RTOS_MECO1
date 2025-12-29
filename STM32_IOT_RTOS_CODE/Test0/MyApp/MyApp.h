@@ -22,6 +22,7 @@
   #endif
 
   void MyApp(void);
+  void Log(char* log);
   
   #ifdef __cplusplus
   }

@@ -21,10 +21,43 @@
 #include <stdio.h>
 #include "usart.h"
 
+#define RXBUFFERSIZE 1
+/* Buffer used for reception */
+uint8_t aRxBuffer[RXBUFFERSIZE];
+
+
+/* Private function prototypes -----------------------------------------------*/
+#ifdef __GNUC__
+  /* With GCC, small printf (option LD Linker->Libraries->Small printf
+     set to 'Yes') calls __io_putchar() */
+  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
+PUTCHAR_PROTOTYPE
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF); 
+
+  return ch;
+}  
+  
+
 void Log(char* log)
 {
    HAL_UART_Transmit(&huart3,(uint8_t*)log,strlen(log),100);	
 }
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
+{
+  printf("RX:%X %c\r\n",aRxBuffer[0],aRxBuffer[0]);
+  if(HAL_UART_Receive_IT(&huart2, (uint8_t *)aRxBuffer, RXBUFFERSIZE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
 
 
 void test_send_uart_modbus(void)
@@ -39,6 +72,11 @@ void MyApp(void)
 {		
   
   Log("Start\r\n");
+  
+  if(HAL_UART_Receive_IT(&huart2, (uint8_t *)aRxBuffer, RXBUFFERSIZE) != HAL_OK)
+  {
+    Error_Handler();
+  }
   
 	while(1)
 	{
