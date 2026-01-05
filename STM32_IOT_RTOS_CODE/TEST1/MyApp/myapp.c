@@ -1,110 +1,306 @@
-#include "myapp.h"
-#include "main.h"
-#include "gpio.h"
-#include "usart.h"
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
+//           ****************************************************
+//          **   Processor      : STM32F107VCT6                   **
+//         ***   Frequency      : 8MHz ExtClock 72MHZ CPU Clock   ***
+//        ****   AUTHOR         : Mahdi Dadashi                   ****
+//       *****   STM32CubeMX    : V5.40                           *****
+//      ******   STM32CubeF1    : V1.8.0                          ******
+//       *****   Compiler       : KEIL uVision V5.26              *****
+//        ****   Instagram      : instagram.com/mahdidadashi65/   ****
+//         ***   Telegram       : t.me/mahdidadashi65/            ***
+//          **   Github         : github.com/mahdidadashi65/      **
+//           ****************************************************
+//.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._
+//.-''-._.-''-._.-''                                 ''-._.-''-._.-''-._.-''-._
+//.-''-._.-''-._.-''      www.mahdidadashi.ir        ''-._.-''-._.-''-._.-''-._
+//.-''-._.-''-._.-''                                 ''-._.-''-._.-''-._.-''-._
+//.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._.-''-._
 
+#include "main.h"
+#include "MyApp.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "cmsis_os.h"
 
-#include "httpserver-socket.h"
+#include <string.h>
+#include <stdio.h>
+#include "usart.h"
 
-#include "i2c.h"
-#include "sht2x_for_stm32_hal.h"
+#include "mb.h"
+#include "mbport.h"
 
 
+#define RXBUFFERSIZE 1
+/* Buffer used for reception */
+uint8_t aRxBuffer[RXBUFFERSIZE];
 
+
+/* Private function prototypes -----------------------------------------------*/
 #ifdef __GNUC__
-/* With GCC, small printf (option LD Linker->Libraries->Small printf
-   set to 'Yes') calls __io_putchar() */
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+  /* With GCC, small printf (option LD Linker->Libraries->Small printf
+     set to 'Yes') calls __io_putchar() */
+  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 #else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
-int fputc(int ch, FILE *f)
+PUTCHAR_PROTOTYPE
 {
   /* Place your implementation of fputc here */
-  /* e.g. write a character to the USART1 and Loop until the end of transmission */
-  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
+  /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF); 
 
   return ch;
+}  
+  
+
+void Log(char* log)
+{
+   HAL_UART_Transmit(&huart3,(uint8_t*)log,strlen(log),100);	
 }
 
-//V2
-//osThreadId_t myappTaskHandle;
-//const osThreadAttr_t myappTask_attributes = {
-//  .name = "myappTask",
-//  .stack_size = 128 * 4,
-//  .priority = (osPriority_t) osPriorityNormal,
-//};
-
-//V1
-osThreadId myappTaskHandle;
-
-
-void StartMyAppTask(void const * argument)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
-  /* USER CODE BEGIN StartDefaultTask */
-    http_server_socket_init();
-
-  	/* Initializes SHT2x temperature/humidity sensor and sets the resolution. */
-	SHT2x_Init(&hi2c3);
-	SHT2x_SetResolution(RES_14_12);
-  
-  /* Infinite loop */
-  for(;;)
+  printf("RX:%X %c\r\n",aRxBuffer[0],aRxBuffer[0]);
+  if(HAL_UART_Receive_IT(&huart2, (uint8_t *)aRxBuffer, RXBUFFERSIZE) != HAL_OK)
   {
-    HAL_GPIO_TogglePin(LED_ACTIVE_GPIO_Port,LED_ACTIVE_Pin);
-    HAL_GPIO_TogglePin(LED_LAN_GPIO_Port,LED_LAN_Pin);
-    HAL_GPIO_TogglePin(LED_FAULT_GPIO_Port,LED_FAULT_Pin);
-    HAL_GPIO_TogglePin(LED_BUS1_GPIO_Port,LED_BUS1_Pin);
-    HAL_GPIO_TogglePin(LED_BUS2_GPIO_Port,LED_BUS2_Pin);
-    // printf("Status LED Toggle\r\n");
-    
-    		unsigned char buffer[100] = { 0 };
-		/* Gets current temperature & relative humidity. */
-		float cel = SHT2x_GetTemperature(1);
-		/* Converts temperature to degrees Fahrenheit and Kelvin */
-		float fah = SHT2x_CelsiusToFahrenheit(cel);
-		float kel = SHT2x_CelsiusToKelvin(cel);
-		float rh = SHT2x_GetRelativeHumidity(1);
-		/* May show warning below. Ignore and proceed. */
-		sprintf(buffer,
-				"%d.%dºC, %d.%dºF, %d.%d K, %d.%d%% RH\n",
-				SHT2x_GetInteger(cel), SHT2x_GetDecimal(cel, 1),
-				SHT2x_GetInteger(fah), SHT2x_GetDecimal(fah, 1),
-				SHT2x_GetInteger(kel), SHT2x_GetDecimal(kel, 1),
-				SHT2x_GetInteger(rh), SHT2x_GetDecimal(rh, 1));
-		HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 1000);
-        
-    osDelay(500);
+    Error_Handler();
   }
-  /* USER CODE END StartDefaultTask */
 }
 
 
 
-
-
-//void myappV2(void)
-//{
-//  HAL_UART_Transmit(&huart3,"Start MyApp\r\n",strlen("Start MyApp\r\n"), 100);
-//  printf("Start MyApp\r\n");
-//  
-//  myappTaskHandle = osThreadNew(StartMyAppTask, NULL, &myappTask_attributes);
-
-//}
-
-void myapp(void)
+void test_send_uart_modbus(void)
 {
-  HAL_UART_Transmit(&huart3,"Start MyApp\r\n",strlen("Start MyApp\r\n"), 100);
-  printf("Start MyApp\r\n");
-  
-  osThreadDef(myappTask, StartMyAppTask, osPriorityNormal, 0, 2048);
-  myappTaskHandle = osThreadCreate(osThread(myappTask), NULL);
+  uint8_t data[10]={1,2,3};
+  HAL_GPIO_WritePin(RS485_DIR_GPIO_Port,RS485_DIR_Pin,1);
+  HAL_UART_Transmit(&huart2,(uint8_t*)data,10,100);	
+  HAL_GPIO_WritePin(RS485_DIR_GPIO_Port,RS485_DIR_Pin,0);
 }
 
+//********************
+
+
+
+
+#define REG_INPUT_START 0
+#define REG_INPUT_NREGS 10
+
+static USHORT usRegInputStart = REG_INPUT_START;
+static USHORT usRegInputBuf[REG_INPUT_NREGS];
+
+void Test_ModbusRTU(void)
+{ 
+  /* ABCDEF */
+  usRegInputBuf[0] = 11;
+  usRegInputBuf[1] = 22;
+  usRegInputBuf[2] = 33;
+  usRegInputBuf[3] = 44;
+  usRegInputBuf[4] = 55;
+  usRegInputBuf[5] = 66;
+  usRegInputBuf[6] = 77;
+  usRegInputBuf[7] = 88;
+  usRegInputBuf[8] = 99;
+  usRegInputBuf[9] = 100;  
+  
+  eMBErrorCode eStatus = eMBInit( MB_RTU, 5, 3, 19200, MB_PAR_NONE );
+  eStatus = eMBEnable();
+  
+  while(1) 
+  {
+    eMBPoll(); 
+    //HAL_GPIO_TogglePin(LED_G_GPIO_Port,LED_G_Pin); 
+    //HAL_Delay(100);    
+  }
+}
+
+eMBErrorCode
+eMBRegInputCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs )
+{
+    eMBErrorCode    eStatus = MB_ENOERR;
+    int             iRegIndex;
+
+    if( ( usAddress >= REG_INPUT_START )
+        && ( usAddress + usNRegs <= REG_INPUT_START + REG_INPUT_NREGS ) )
+    {
+        iRegIndex = ( int )( usAddress - usRegInputStart );
+        while( usNRegs > 0 )
+        {
+            *pucRegBuffer++ =
+                ( unsigned char )( usRegInputBuf[iRegIndex] >> 8 );
+            *pucRegBuffer++ =
+                ( unsigned char )( usRegInputBuf[iRegIndex] & 0xFF );
+            iRegIndex++;
+            usNRegs--;
+        }
+				
+				//HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+    }
+    else
+    {
+			  //HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+        eStatus = MB_ENOREG;			
+    }
+
+    return eStatus;
+}
+
+eMBErrorCode
+eMBRegHoldingCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs,
+                 eMBRegisterMode eMode )
+{
+    return MB_ENOREG;
+}
+
+
+eMBErrorCode
+eMBRegCoilsCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNCoils,
+               eMBRegisterMode eMode )
+{
+    return MB_ENOREG;
+}
+
+eMBErrorCode
+eMBRegDiscreteCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNDiscrete )
+{
+    return MB_ENOREG;
+}
+
+
+__attribute__((weak,noreturn))
+void __aeabi_assert (const char *expr, const char *file, int line) {
+  char str[12], *p;
+
+  fputs("*** assertion failed: ", stderr);
+  fputs(expr, stderr);
+  fputs(", file ", stderr);
+  fputs(file, stderr);
+  fputs(", line ", stderr);
+
+  p = str + sizeof(str);
+  *--p = '\0';
+  *--p = '\n';
+  while (line > 0) {
+    *--p = '0' + (line % 10);
+    line /= 10;
+  }
+  fputs(p, stderr);
+
+  abort();
+}
+
+__attribute__((weak))
+void abort(void) {
+  for (;;);
+}
+//**********************
+
+void vTaskBlink1( void * pvParameters )
+{
+  Log("Task Blink1 Started\r\n");
+  /* Enter an infinite loop to perform the task processing. */
+  for( ;; )
+  {
+    HAL_GPIO_WritePin(LED_B_GPIO_Port,LED_B_Pin,1);
+    vTaskDelay( pdMS_TO_TICKS( 100 ) );
+    HAL_GPIO_WritePin(LED_B_GPIO_Port,LED_B_Pin,0);
+    vTaskDelay( pdMS_TO_TICKS( 100 ) );
+  }
+}
+
+void vTaskBlink2( void * pvParameters )
+{
+  Log("Task Blink2 Started\r\n");
+  /* Enter an infinite loop to perform the task processing. */
+  for( ;; )
+  {
+    HAL_GPIO_WritePin(LED_R_GPIO_Port,LED_R_Pin,1);
+    vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+    HAL_GPIO_WritePin(LED_R_GPIO_Port,LED_R_Pin,0);
+    vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+  }
+}
+
+
+    TaskHandle_t xHandle1;
+    TaskHandle_t xHandle2;
+
+
+void MyApp(void)
+{		 
+  
+  Log("MyApp Start\r\n");
+  
+
+    /* Create the task. */
+    if( xTaskCreate(
+    vTaskBlink1, /* Pointer to the function that implements the task. */
+    "blink task1", /* Text name given to the task. */
+    1024, /* The size of the stack that should be created for the task.
+    This is defined in words, not bytes. */
+    (void*) 0,/* A reference to xParameters is used as the task parameter.
+    This is cast to a void * to prevent compiler warnings. */
+    0, /* The priority to assign to the newly created task. */
+    &xHandle1 /* The handle to the task being created will be placed in
+    xHandle. */
+    ) != pdPASS )
+    {
+    /* The task could not be created as there was insufficient heap memory remaining. If
+    heap_1.c, heap_2.c or heap_4.c are included in the project then this situation can be
+    trapped using the vApplicationMallocFailedHook() callback (or ‘hook’) function, and the
+    amount of FreeRTOS heap memory that remains unallocated can be queried using the
+    xPortGetFreeHeapSize() API function.*/
+           
+      Log("Task1 Blink Create Err\r\n");
+    }
+    else
+    {
+      Log("Task1 Blink Created\r\n");
+    }
+    
+    
+        /* Create the task. */
+    if( xTaskCreate(
+    vTaskBlink2, /* Pointer to the function that implements the task. */
+    "blink task2", /* Text name given to the task. */
+    1024, /* The size of the stack that should be created for the task.
+    This is defined in words, not bytes. */
+    (void*) 0,/* A reference to xParameters is used as the task parameter.
+    This is cast to a void * to prevent compiler warnings. */
+    0, /* The priority to assign to the newly created task. */
+    &xHandle2 /* The handle to the task being created will be placed in
+    xHandle. */
+    ) != pdPASS )
+    {
+    /* The task could not be created as there was insufficient heap memory remaining. If
+    heap_1.c, heap_2.c or heap_4.c are included in the project then this situation can be
+    trapped using the vApplicationMallocFailedHook() callback (or ‘hook’) function, and the
+    amount of FreeRTOS heap memory that remains unallocated can be queried using the
+    xPortGetFreeHeapSize() API function.*/
+           
+      Log("Task2 Blink Create Err\r\n");
+    }
+    else
+    {
+      Log("Task2 Blink Created\r\n");
+    }
+  
+   
+}
+void MyApp_NOOS(void)
+{		
+  
+  Log("Start\r\n");
+  
+//  if(HAL_UART_Receive_IT(&huart2, (uint8_t *)aRxBuffer, RXBUFFERSIZE) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
+  
+  Test_ModbusRTU();
+  
+	while(1)
+	{
+    HAL_GPIO_TogglePin(LED_G_GPIO_Port,LED_G_Pin);
+    Log("Toggle\r\n");
+    //test_send_uart_modbus();
+    HAL_Delay(1000);
+	}	
+}
