@@ -216,8 +216,12 @@ void vTaskAccelerometer(void *pvParameters)
 
 void MyApp(void)
 {		 
-  
   Log("MyApp Start\r\n");
+  
+  init_QueueSimpleQueue();
+  
+  vTaskDelete(NULL);
+  return;
   
 
     /* Create the task. */

@@ -399,6 +399,11 @@
               <FileType>1</FileType>
               <FilePath>..\MyApp\MyApp.c</FilePath>
             </File>
+            <File>
+              <FileName>QueueSimpleQueue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MyApp\FreeRTOS_Tasks\QueueSimpleQueue.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
