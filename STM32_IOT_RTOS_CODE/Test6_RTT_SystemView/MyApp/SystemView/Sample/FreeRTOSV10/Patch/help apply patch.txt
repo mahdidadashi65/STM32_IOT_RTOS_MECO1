@@ -1,0 +1,3 @@
+patch.exe -i <patchfile>
+patch.exe -i FreeRTOSV10_Amazon_Core.patch
+patch.exe -i FreeRTOSV10_Core.patch

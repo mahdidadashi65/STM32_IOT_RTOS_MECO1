@@ -1,0 +1,2 @@
+git apply  FreeRTOSV10_Amazon_Core.patch
+git apply  FreeRTOSV10_Core.patch
