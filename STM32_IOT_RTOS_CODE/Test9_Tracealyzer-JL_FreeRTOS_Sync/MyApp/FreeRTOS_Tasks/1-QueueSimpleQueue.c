@@ -1,4 +1,5 @@
-
+#include "MyApp.h"
+#ifdef __TEST01
 #include "main.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -156,3 +157,4 @@ void init_QueueSimpleQueue(void)
   HAL_UART_Receive_IT(&huart3, &rx_data, 1);
 
 }
+#endif
