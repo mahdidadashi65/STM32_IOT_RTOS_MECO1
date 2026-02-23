@@ -24,7 +24,8 @@
 #include <stdio.h>
 #include "usart.h"
 
-#include "Task_UDP.h"
+#include "Task_UDP_Server.h"
+#include "Task_UDP_Client.h"
 
 /* Private function prototypes -----------------------------------------------*/
 #ifdef __GNUC__
@@ -113,18 +114,19 @@ void MyApp(void)
     }
     
     
-    if( xTaskCreate(vTaskBlink2,"task2",1024,(void*) 0,0,&xHandle2) != pdPASS )
-    {         
-      Log("Task2 Blink Create Err\r\n");
-    }
-    else
-    {
-      Log("Task2 Blink Created\r\n");
-    }
+//    if( xTaskCreate(vTaskBlink2,"task2",1024,(void*) 0,0,&xHandle2) != pdPASS )
+//    {         
+//      Log("Task2 Blink Create Err\r\n");
+//    }
+//    else
+//    {
+//      Log("Task2 Blink Created\r\n");
+//    }
   
     //vTaskDelete(NULL);
     
-    init_task_udp();
+    init_task_udp_server();
+    init_task_udp_client();
    
 }
 

@@ -1084,9 +1084,14 @@
               <FilePath>..\MyApp\MyApp.c</FilePath>
             </File>
             <File>
-              <FileName>Task_UDP.c</FileName>
+              <FileName>Task_UDP_Server.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\MyApp\Task_UDP.c</FilePath>
+              <FilePath>..\MyApp\Task_UDP_Server.c</FilePath>
+            </File>
+            <File>
+              <FileName>Task_UDP_Client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MyApp\Task_UDP_Client.c</FilePath>
             </File>
           </Files>
         </Group>
